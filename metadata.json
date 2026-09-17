@@ -1,0 +1,6 @@
+{
+  "name": "BOB BBPS Analytics Portal",
+  "description": "Bank of Baroda BBPS Analytics & Operations Portal with end-to-end KYC workflow, Admin User Management (Create User modal, Verification & Rejection popup), AI Agent management, Autopay mandates, and Biller verification.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

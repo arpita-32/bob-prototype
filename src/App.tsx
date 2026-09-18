@@ -311,6 +311,7 @@ export default function App() {
             <AgentListView
               agentsList={agentsList}
               onNavigate={handleNavigate}
+              onUpdateAgent={handleUpdateAgent}
             />
           )}
 
@@ -318,6 +319,8 @@ export default function App() {
             <CreateAgentView
               onNavigate={handleNavigate}
               onAgentCreated={handleAgentCreated}
+              agentsList={agentsList}
+              onUpdateAgent={handleUpdateAgent}
             />
           )}
 

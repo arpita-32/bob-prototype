@@ -1,21 +1,21 @@
-import React, { useState, useMemo } from 'react';
 import {
-  CheckCircle2,
   AlertCircle,
-  ChevronDown,
   Building2,
-  UserCheck,
+  CheckCircle2,
+  ChevronDown,
+  Download,
+  FileCheck2,
+  FileSpreadsheet,
+  Info,
+  RefreshCw,
   ShieldCheck,
   Store,
   UploadCloud,
-  FileSpreadsheet,
-  Download,
-  FileCheck2,
-  RefreshCw,
-  Info,
+  UserCheck,
 } from 'lucide-react';
-import { AgentEntity, NavItem, OnboardedAgent } from '../../types';
+import React, { useMemo, useState } from 'react';
 import { mockAgentEntities } from '../../data/mockData';
+import { AgentEntity, NavItem, OnboardedAgent } from '../../types';
 
 interface CreateAgentViewProps {
   onNavigate: (nav: NavItem, agent?: AgentEntity) => void;
@@ -91,20 +91,12 @@ export const CreateAgentView: React.FC<CreateAgentViewProps> = ({
   const [agentAddress, setAgentAddress] = useState('');
   const [agentPinCode, setAgentPinCode] = useState('');
 
-  // Agent Wallet Limit State
-  const [agentWalletEnabled, setAgentWalletEnabled] = useState<boolean>(true);
-  const [agentWalletType, setAgentWalletType] = useState<string>('Fixed Wallet');
-  const [agentDailyLimit, setAgentDailyLimit] = useState<string>('50,000');
-  const [agentTxnLimit, setAgentTxnLimit] = useState<string>('10,000');
-
   // Validation errors for Agent
   const [agentErrors, setAgentErrors] = useState<{
     parentAi?: string;
     agentId?: string;
     agentName?: string;
     agentMobile?: string;
-    dailyLimit?: string;
-    txnLimit?: string;
   }>({});
 
   // ==========================================
@@ -255,8 +247,6 @@ export const CreateAgentView: React.FC<CreateAgentViewProps> = ({
       agentId?: string;
       agentName?: string;
       agentMobile?: string;
-      dailyLimit?: string;
-      txnLimit?: string;
     } = {};
 
     if (!selectedParentAiId) {
@@ -269,24 +259,6 @@ export const CreateAgentView: React.FC<CreateAgentViewProps> = ({
 
     if (!agentNameInput.trim()) {
       errs.agentName = 'Agent / Outlet Name is required';
-    }
-
-    if (agentWalletEnabled) {
-      const dailyNum = parseInt(agentDailyLimit.replace(/[^0-9]/g, ''), 10);
-      if (!agentDailyLimit.trim()) {
-        errs.dailyLimit = 'Daily Limit is required when wallet limit is enabled';
-      } else if (isNaN(dailyNum) || dailyNum <= 0) {
-        errs.dailyLimit = 'Please enter a valid positive daily amount';
-      }
-
-      const txnNum = parseInt(agentTxnLimit.replace(/[^0-9]/g, ''), 10);
-      if (!agentTxnLimit.trim()) {
-        errs.txnLimit = 'Transaction Limit is required when wallet limit is enabled';
-      } else if (isNaN(txnNum) || txnNum <= 0) {
-        errs.txnLimit = 'Please enter a valid positive transaction amount';
-      } else if (!isNaN(dailyNum) && txnNum > dailyNum) {
-        errs.txnLimit = 'Transaction limit cannot exceed daily limit';
-      }
     }
 
     setAgentErrors(errs);
@@ -309,11 +281,8 @@ export const CreateAgentView: React.FC<CreateAgentViewProps> = ({
       agentId: agentIdInput.trim().toUpperCase(),
       agentName: agentNameInput.trim(),
       agentStatus: 'Active',
-      walletStatus: agentWalletEnabled ? 'Active' : 'No Wallet Limit',
-      walletLimitConfigured: agentWalletEnabled,
-      walletType: agentWalletEnabled ? agentWalletType : undefined,
-      dailyLimit: agentWalletEnabled ? agentDailyLimit.trim() : undefined,
-      transactionLimit: agentWalletEnabled ? agentTxnLimit.trim() : undefined,
+      walletStatus: 'No Wallet Limit',
+      walletLimitConfigured: false,
     };
 
     if (parentAi && onUpdateAgent) {
@@ -339,23 +308,12 @@ export const CreateAgentView: React.FC<CreateAgentViewProps> = ({
   // Bulk Upload Processing & Sample Download
   // ------------------------------------------
   const handleDownloadSample = () => {
-    let csvContent = '';
-    let fileName = '';
-
-    if (entityTarget === 'institution') {
-      csvContent =
-        'AI_ID,ENTITY_NAME,ENTITY_TYPE,PAN,GSTIN,PIN_CODE,ADDRESS,ADMIN_FNAME,ADMIN_LNAME,ADMIN_MOBILE,ADMIN_EMAIL,WALLET_TYPE,DAILY_LIMIT,TXN_LIMIT\n' +
-        'AI_DEMO01,MetroPay Network Pvt Ltd,Private Limited,AABCM1234D,27AABCM1234D1Z8,400001,Nariman Point Mumbai,Anil,Sharma,+91 9820011223,anil@metropay.in,Fixed Wallet,1500000,150000\n' +
-        'AI_DEMO02,BharatRetail Alliance,Partnership,AAFCB8812K,27AAFCB8812K1Z3,400051,BKC Bandra Mumbai,Sunita,Desai,+91 9820122334,sunita@bharatretail.in,Variable Wallet,2500000,250000\n';
-      fileName = 'sample_agent_institutions_template.csv';
-    } else {
-      csvContent =
-        'PARENT_AI_ID,AGENT_ID,AGENT_NAME,CATEGORY,MOBILE,EMAIL,CITY,PIN_CODE,WALLET_TYPE,DAILY_LIMIT,TXN_LIMIT\n' +
-        'AI_SK01,AG010,Andheri Station Kiosk,Retail Outlet,+91 9811122334,kiosk.andheri@outlet.in,Mumbai,400069,Fixed Wallet,50000,10000\n' +
-        'AI_SK01,AG011,Bandra West Counter,Physical Counter,+91 9811122335,bandra.counter@outlet.in,Mumbai,400050,Variable Wallet,75000,15000\n' +
-        'AI_QP02,AG105,Lower Parel Hub,Retail Outlet,+91 9811122336,hub.lowerparel@outlet.in,Mumbai,400013,Fixed Wallet,60000,12000\n';
-      fileName = 'sample_agents_template.csv';
-    }
+    const csvContent =
+      'PARENT_AI_ID,AGENT_ID,AGENT_NAME,CATEGORY,MOBILE,EMAIL,CITY,PIN_CODE,WALLET_TYPE,DAILY_LIMIT,TXN_LIMIT\n' +
+      'AI_SK01,AG010,Andheri Station Kiosk,Retail Outlet,+91 9811122334,kiosk.andheri@outlet.in,Mumbai,400069,Fixed Wallet,50000,10000\n' +
+      'AI_SK01,AG011,Bandra West Counter,Physical Counter,+91 9811122335,bandra.counter@outlet.in,Mumbai,400050,Variable Wallet,75000,15000\n' +
+      'AI_QP02,AG105,Lower Parel Hub,Retail Outlet,+91 9811122336,hub.lowerparel@outlet.in,Mumbai,400013,Fixed Wallet,60000,12000\n';
+    const fileName = 'sample_agents_template.csv';
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -384,9 +342,7 @@ export const CreateAgentView: React.FC<CreateAgentViewProps> = ({
         errors: 0,
       });
       showToast(
-        `Successfully uploaded and processed ${simulatedCount} ${
-          entityTarget === 'institution' ? 'Agent Institutions' : 'Agents'
-        }!`
+        `Successfully uploaded and processed ${simulatedCount} Agents!`
       );
     }, 1500);
   };
@@ -452,21 +408,48 @@ export const CreateAgentView: React.FC<CreateAgentViewProps> = ({
 
             <label
               htmlFor="radio-bulk-upload"
-              className="inline-flex items-center gap-2.5 cursor-pointer select-none group"
+              onClick={(e) => {
+                if (entityTarget === 'institution') {
+                  e.preventDefault();
+                  showToast('Bulk upload is only available for Agent onboarding.');
+                }
+              }}
+              className={`inline-flex items-center gap-2.5 select-none transition-all ${
+                entityTarget === 'institution'
+                  ? 'opacity-40 cursor-not-allowed'
+                  : 'cursor-pointer group'
+              }`}
+              title={
+                entityTarget === 'institution'
+                  ? 'Bulk upload is only available for Agent onboarding'
+                  : 'Bulk upload multiple agents via CSV/Excel'
+              }
             >
               <input
                 id="radio-bulk-upload"
                 type="radio"
                 name="creationMode"
                 value="bulk"
+                disabled={entityTarget === 'institution'}
                 checked={creationMode === 'bulk'}
                 onChange={() => {
+                  if (entityTarget === 'institution') return;
                   setCreationMode('bulk');
+                  setEntityTarget('agent');
                   setBulkSuccessSummary(null);
                 }}
-                className="w-4 h-4 text-[#FF6B11] border-slate-300 focus:ring-[#FF6B11] accent-[#FF6B11] cursor-pointer"
+                className="w-4 h-4 text-[#FF6B11] border-slate-300 focus:ring-[#FF6B11] accent-[#FF6B11] disabled:cursor-not-allowed cursor-pointer"
               />
-              <span className="group-hover:text-slate-900 transition-colors">Bulk Upload</span>
+              <span className="flex items-center gap-1.5">
+                <span className={entityTarget !== 'institution' ? 'group-hover:text-slate-900' : ''}>
+                  Bulk Upload
+                </span>
+                {entityTarget === 'institution' && (
+                  <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                    Agent Only
+                  </span>
+                )}
+              </span>
             </label>
           </div>
 
@@ -484,6 +467,8 @@ export const CreateAgentView: React.FC<CreateAgentViewProps> = ({
                 checked={entityTarget === 'institution'}
                 onChange={() => {
                   setEntityTarget('institution');
+                  // Bulk upload is strictly for Agent, so clicking Agent Institution switches mode to Individual
+                  setCreationMode('individual');
                   setBulkSuccessSummary(null);
                 }}
                 className="w-4 h-4 text-[#FF6B11] border-slate-300 focus:ring-[#FF6B11] accent-[#FF6B11] cursor-pointer"
@@ -527,10 +512,10 @@ export const CreateAgentView: React.FC<CreateAgentViewProps> = ({
               </div>
               <div>
                 <h2 className="text-base font-bold text-slate-900">
-                  Bulk Upload - {entityTarget === 'institution' ? 'Agent Institutions' : 'Agents'}
+                  Bulk Upload - Agents
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Upload multiple records simultaneously via CSV or Excel spreadsheet.
+                  Upload multiple agent outlets mapped to their parent Agent Institutions via CSV or Excel spreadsheet.
                 </p>
               </div>
             </div>
@@ -542,7 +527,7 @@ export const CreateAgentView: React.FC<CreateAgentViewProps> = ({
               className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-[#FF6B11] hover:text-[#e05a08] bg-orange-50 hover:bg-orange-100/70 border border-orange-200 rounded-xl transition-colors cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
-              Download Sample CSV
+              Download Sample Agents CSV
             </button>
           </div>
 
@@ -550,29 +535,19 @@ export const CreateAgentView: React.FC<CreateAgentViewProps> = ({
           <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-3 text-xs text-slate-600">
             <Info className="w-4 h-4 text-[#FF6B11] shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <span className="font-semibold text-slate-800">Bulk Upload Guidelines:</span>
+              <span className="font-semibold text-slate-800">Bulk Agent Upload Guidelines:</span>
               <ul className="list-disc list-inside space-y-0.5 text-slate-500">
-                {entityTarget === 'institution' ? (
-                  <>
-                    <li>Format: Standard CSV or XLSX with headers matching the sample template.</li>
-                    <li>
-                      Required columns: <code>AI_ID</code>, <code>ENTITY_NAME</code>, <code>PAN</code>,{' '}
-                      <code>DAILY_LIMIT</code>, <code>TXN_LIMIT</code>.
-                    </li>
-                    <li>Limits must be specified in INR (numeric values).</li>
-                  </>
-                ) : (
-                  <>
-                    <li>Format: Standard CSV or XLSX with headers matching the sample template.</li>
-                    <li>
-                      Required columns: <code>PARENT_AI_ID</code>, <code>AGENT_ID</code>,{' '}
-                      <code>AGENT_NAME</code>, <code>DAILY_LIMIT</code>.
-                    </li>
-                    <li>
-                      Parent AI IDs must match existing active AI entities in the system.
-                    </li>
-                  </>
-                )}
+                <li>Format: Standard CSV or XLSX with headers matching the sample template.</li>
+                <li>
+                  Required columns: <code>PARENT_AI_ID</code>, <code>AGENT_ID</code>,{' '}
+                  <code>AGENT_NAME</code>, <code>CATEGORY</code>, <code>MOBILE</code>.
+                </li>
+                <li>
+                  Parent AI IDs must match existing active AI entities in the system.
+                </li>
+                <li>
+                  Note: Bulk upload is exclusively designated for Agent onboarding. Individual creation is used for Agent Institutions.
+                </li>
               </ul>
             </div>
           </div>
@@ -1401,172 +1376,6 @@ export const CreateAgentView: React.FC<CreateAgentViewProps> = ({
                 />
               </div>
             </div>
-          </div>
-
-          {/* SECTION 3: AGENT WALLET LIMIT CONFIGURATION */}
-          <div>
-            <div className="border-b border-slate-100 pb-3 mb-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
-                    <ShieldCheck className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-bold text-slate-800 tracking-wide uppercase">
-                      Agent Wallet Limits
-                    </h2>
-                    <p className="text-xs text-slate-500">
-                      Configure individual outlet daily and per-transaction limits under the AI ceiling.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Dynamic Toggle: Enabled / Disabled */}
-                <div className="flex items-center gap-1.5 p-1 bg-slate-100/90 border border-slate-200 rounded-xl self-start sm:self-auto">
-                  <button
-                    type="button"
-                    id="toggle-agent-wallet-enabled"
-                    onClick={() => {
-                      setAgentWalletEnabled(true);
-                      setAgentErrors((prev) => ({
-                        ...prev,
-                        dailyLimit: undefined,
-                        txnLimit: undefined,
-                      }));
-                    }}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                      agentWalletEnabled
-                        ? 'bg-white text-[#FF6B11] shadow-xs border border-slate-200/80 font-bold'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <span
-                      className={`w-2 h-2 rounded-full ${
-                        agentWalletEnabled ? 'bg-[#FF6B11]' : 'border border-slate-400'
-                      }`}
-                    />
-                    Enabled
-                  </button>
-                  <button
-                    type="button"
-                    id="toggle-agent-wallet-disabled"
-                    onClick={() => {
-                      setAgentWalletEnabled(false);
-                      setAgentErrors((prev) => ({
-                        ...prev,
-                        dailyLimit: undefined,
-                        txnLimit: undefined,
-                      }));
-                    }}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                      !agentWalletEnabled
-                        ? 'bg-white text-slate-800 shadow-xs border border-slate-200/80 font-bold'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <span
-                      className={`w-2 h-2 rounded-full ${
-                        !agentWalletEnabled ? 'bg-slate-700' : 'border border-slate-400'
-                      }`}
-                    />
-                    Disabled
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {agentWalletEnabled ? (
-              <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-5 space-y-5 animate-in fade-in duration-200">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                  {/* Wallet Type */}
-                  <div className="space-y-1.5">
-                    <label htmlFor="agent-wallet-type" className="block text-xs font-semibold text-slate-700">
-                      Wallet Type <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <select
-                        id="agent-wallet-type"
-                        value={agentWalletType}
-                        onChange={(e) => setAgentWalletType(e.target.value)}
-                        className="w-full appearance-none px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#FF6B11]/20 focus:border-[#FF6B11] pr-10"
-                      >
-                        <option value="Fixed Wallet">Fixed Wallet</option>
-                        <option value="Variable Wallet">Variable Wallet</option>
-                      </select>
-                      <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    </div>
-                  </div>
-
-                  {/* Daily Limit */}
-                  <div className="space-y-1.5">
-                    <label htmlFor="agent-daily-limit" className="block text-xs font-semibold text-slate-700">
-                      Daily Limit <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold">
-                        ₹
-                      </span>
-                      <input
-                        id="agent-daily-limit"
-                        type="text"
-                        value={agentDailyLimit}
-                        onChange={(e) => {
-                          setAgentDailyLimit(e.target.value);
-                          if (agentErrors.dailyLimit)
-                            setAgentErrors((prev) => ({ ...prev, dailyLimit: undefined }));
-                        }}
-                        placeholder="e.g. 50,000"
-                        className={`w-full pl-8 pr-3.5 py-2.5 bg-white border rounded-xl text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all ${
-                          agentErrors.dailyLimit
-                            ? 'border-rose-400 focus:ring-rose-200 bg-rose-50/20'
-                            : 'border-slate-200 focus:border-[#FF6B11] focus:ring-[#FF6B11]/20'
-                        }`}
-                      />
-                    </div>
-                    {agentErrors.dailyLimit && (
-                      <p className="text-[11px] text-rose-500">{agentErrors.dailyLimit}</p>
-                    )}
-                  </div>
-
-                  {/* Transaction Limit */}
-                  <div className="space-y-1.5">
-                    <label htmlFor="agent-txn-limit" className="block text-xs font-semibold text-slate-700">
-                      Transaction Limit <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold">
-                        ₹
-                      </span>
-                      <input
-                        id="agent-txn-limit"
-                        type="text"
-                        value={agentTxnLimit}
-                        onChange={(e) => {
-                          setAgentTxnLimit(e.target.value);
-                          if (agentErrors.txnLimit)
-                            setAgentErrors((prev) => ({ ...prev, txnLimit: undefined }));
-                        }}
-                        placeholder="e.g. 10,000"
-                        className={`w-full pl-8 pr-3.5 py-2.5 bg-white border rounded-xl text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all ${
-                          agentErrors.txnLimit
-                            ? 'border-rose-400 focus:ring-rose-200 bg-rose-50/20'
-                            : 'border-slate-200 focus:border-[#FF6B11] focus:ring-[#FF6B11]/20'
-                        }`}
-                      />
-                    </div>
-                    {agentErrors.txnLimit && (
-                      <p className="text-[11px] text-rose-500">{agentErrors.txnLimit}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-slate-50 border border-dashed border-slate-200 rounded-xl p-4 text-xs text-slate-500 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-slate-400" />
-                Wallet Limit is disabled for this agent. No individual limit will be enforced on
-                this agent (only parent AI ceiling applies).
-              </div>
-            )}
           </div>
 
           {/* Form Actions */}

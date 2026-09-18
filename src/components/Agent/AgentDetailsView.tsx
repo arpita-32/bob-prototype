@@ -13,8 +13,10 @@ import {
   RefreshCw,
   Search,
   SlidersHorizontal,
+  Users,
+  Plus,
 } from 'lucide-react';
-import { AgentEntity, NavItem } from '../../types';
+import { AgentEntity, NavItem, OnboardedAgent } from '../../types';
 import { mockAgentEntities } from '../../data/mockData';
 
 interface AgentDetailsViewProps {
@@ -47,6 +49,17 @@ export const AgentDetailsView: React.FC<AgentDetailsViewProps> = ({
 
   // Confirmation modal for deactivation
   const [showDeactivateModal, setShowDeactivateModal] = useState<boolean>(false);
+
+  // Modal action for Onboarded Agent activate / deactivate under this AI
+  const [agentModalAction, setAgentModalAction] = useState<{
+    action: 'activate' | 'deactivate';
+    agentObj: OnboardedAgent;
+  } | null>(null);
+
+  // Modal action for AI Entity activate / deactivate by Admin
+  const [aiStatusModalAction, setAiStatusModalAction] = useState<{
+    action: 'activate' | 'deactivate';
+  } | null>(null);
 
   // Toast notification state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -185,6 +198,60 @@ export const AgentDetailsView: React.FC<AgentDetailsViewProps> = ({
     setIsConfiguringNewWallet(true);
   };
 
+  // Toggle Onboarded Agent active/inactive status from AI Details
+  const handleToggleAgentStatusInDetails = (
+    agentObj: OnboardedAgent,
+    targetStatus: 'Active' | 'Inactive'
+  ) => {
+    if (!selectedAi) return;
+
+    const currentAgents = selectedAi.onboardedAgents || [];
+    const updatedAgents = currentAgents.map((ag) =>
+      ag.id === agentObj.id || ag.agentId === agentObj.agentId
+        ? { ...ag, agentStatus: targetStatus }
+        : ag
+    );
+
+    const updatedAi: AgentEntity = {
+      ...selectedAi,
+      onboardedAgents: updatedAgents,
+    };
+
+    setSelectedAi(updatedAi);
+    setAgentModalAction(null);
+
+    if (onUpdateAgent) {
+      onUpdateAgent(updatedAi);
+    }
+
+    showToast(
+      `Agent "${agentObj.agentName}" (${agentObj.agentId}) status updated to ${targetStatus}.`
+    );
+  };
+
+  // Toggle AI Entity Active/Inactive status by Admin
+  const handleToggleAiStatusInDetails = (targetStatus: 'Active' | 'Inactive') => {
+    if (!selectedAi) return;
+
+    const updatedAi: AgentEntity = {
+      ...selectedAi,
+      status: targetStatus,
+    };
+
+    setSelectedAi(updatedAi);
+    setAiStatusModalAction(null);
+
+    if (onUpdateAgent) {
+      onUpdateAgent(updatedAi);
+    }
+
+    showToast(
+      `Agent Institution "${updatedAi.name}" has been ${
+        targetStatus === 'Active' ? 'activated' : 'deactivated'
+      } successfully.`
+    );
+  };
+
   const getEffectiveWalletStatus = (ai: AgentEntity): 'Active' | 'No Wallet Limit' | 'Deactivated' => {
     if (ai.walletStatus) return ai.walletStatus;
     if (ai.walletCeilingEnabled) return 'Active';
@@ -239,6 +306,157 @@ export const AgentDetailsView: React.FC<AgentDetailsViewProps> = ({
                 className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs transition-colors cursor-pointer"
               >
                 Confirm Deactivation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Agent Activation/Deactivation Confirmation Modal */}
+      {agentModalAction && selectedAi && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+                  agentModalAction.action === 'deactivate'
+                    ? 'bg-rose-50 border-rose-200 text-rose-600'
+                    : 'bg-emerald-50 border-emerald-200 text-emerald-600'
+                }`}
+              >
+                {agentModalAction.action === 'deactivate' ? (
+                  <Power className="w-5 h-5" />
+                ) : (
+                  <RefreshCw className="w-5 h-5" />
+                )}
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  {agentModalAction.action === 'deactivate' ? 'Deactivate' : 'Activate'} Agent?
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {agentModalAction.agentObj.agentName} ({agentModalAction.agentObj.agentId})
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              {agentModalAction.action === 'deactivate' ? (
+                <>
+                  Are you sure you want to deactivate{' '}
+                  <span className="font-bold text-slate-800">
+                    {agentModalAction.agentObj.agentName}
+                  </span>
+                  ? This will immediately suspend agent operations under {selectedAi.name}.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to activate{' '}
+                  <span className="font-bold text-slate-800">
+                    {agentModalAction.agentObj.agentName}
+                  </span>
+                  ? This will restore active operations for this agent under {selectedAi.name}.
+                </>
+              )}
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setAgentModalAction(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                id="confirm-agent-status-modal-btn"
+                onClick={() =>
+                  handleToggleAgentStatusInDetails(
+                    agentModalAction.agentObj,
+                    agentModalAction.action === 'deactivate' ? 'Inactive' : 'Active'
+                  )
+                }
+                className={`px-4 py-2 text-xs font-bold text-white rounded-xl shadow-xs transition-colors cursor-pointer ${
+                  agentModalAction.action === 'deactivate'
+                    ? 'bg-rose-600 hover:bg-rose-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
+              >
+                Confirm {agentModalAction.action === 'deactivate' ? 'Deactivation' : 'Activation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Entity Activate/Deactivate Confirmation Modal (Admin action) */}
+      {aiStatusModalAction && selectedAi && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+                  aiStatusModalAction.action === 'deactivate'
+                    ? 'bg-rose-50 border-rose-200 text-rose-600'
+                    : 'bg-emerald-50 border-emerald-200 text-emerald-600'
+                }`}
+              >
+                {aiStatusModalAction.action === 'deactivate' ? (
+                  <Power className="w-5 h-5" />
+                ) : (
+                  <RefreshCw className="w-5 h-5" />
+                )}
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  {aiStatusModalAction.action === 'deactivate' ? 'Deactivate' : 'Activate'} Agent Institution?
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {selectedAi.name} ({selectedAi.aiId || selectedAi.entityNpciId})
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              {aiStatusModalAction.action === 'deactivate' ? (
+                <>
+                  Are you sure you want to deactivate{' '}
+                  <span className="font-bold text-slate-800">{selectedAi.name}</span>? This will suspend
+                  operational activities across all mapped agents under this AI institution until reactivated.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to activate{' '}
+                  <span className="font-bold text-slate-800">{selectedAi.name}</span>? This will restore
+                  active institutional operational status.
+                </>
+              )}
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setAiStatusModalAction(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                id="confirm-ai-details-status-btn"
+                onClick={() =>
+                  handleToggleAiStatusInDetails(
+                    aiStatusModalAction.action === 'deactivate' ? 'Inactive' : 'Active'
+                  )
+                }
+                className={`px-4 py-2 text-xs font-bold text-white rounded-xl shadow-xs transition-colors cursor-pointer ${
+                  aiStatusModalAction.action === 'deactivate'
+                    ? 'bg-rose-600 hover:bg-rose-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
+              >
+                Confirm {aiStatusModalAction.action === 'deactivate' ? 'Deactivation' : 'Activation'}
               </button>
             </div>
           </div>
@@ -482,10 +700,46 @@ export const AgentDetailsView: React.FC<AgentDetailsViewProps> = ({
                 </div>
               </div>
 
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                Live Status
-              </span>
+              <div className="flex items-center gap-3">
+                {selectedAi.status === 'Active' || selectedAi.status === 'Live' ? (
+                  <button
+                    type="button"
+                    id="deactivate-selected-ai-btn"
+                    onClick={() => setAiStatusModalAction({ action: 'deactivate' })}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-colors cursor-pointer"
+                  >
+                    <Power className="w-3.5 h-3.5" />
+                    Deactivate AI
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    id="activate-selected-ai-btn"
+                    onClick={() => setAiStatusModalAction({ action: 'activate' })}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors cursor-pointer shadow-xs"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Activate AI
+                  </button>
+                )}
+
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${
+                    selectedAi.status === 'Active' || selectedAi.status === 'Live'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-slate-100 text-slate-700 border-slate-200'
+                  }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      selectedAi.status === 'Active' || selectedAi.status === 'Live'
+                        ? 'bg-emerald-500 animate-pulse'
+                        : 'bg-slate-400'
+                    }`}
+                  />
+                  {selectedAi.status === 'Active' || selectedAi.status === 'Live' ? 'Active' : 'Inactive'}
+                </span>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -813,6 +1067,131 @@ export const AgentDetailsView: React.FC<AgentDetailsViewProps> = ({
                   </button>
                 </div>
               </form>
+            )}
+          </div>
+
+          {/* Section 3: Onboarded Agents Under This Mapped AI */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-[#FF6B11]">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">
+                    Onboarded Agents ({selectedAi.onboardedAgents?.length || 0})
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Agents and transaction outlets mapped under {selectedAi.name}. AI can activate or deactivate individual agents.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                id="onboard-agent-from-details-btn"
+                onClick={() => onNavigate('Create AI')}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-[#FF6B11] hover:bg-[#e05a08] rounded-xl shadow-xs transition-all cursor-pointer self-start sm:self-auto"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Onboard Agent
+              </button>
+            </div>
+
+            {selectedAi.onboardedAgents && selectedAi.onboardedAgents.length > 0 ? (
+              <div className="border border-slate-200 rounded-xl overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="py-3 px-5">Agent ID</th>
+                      <th className="py-3 px-5">Agent / Outlet Name</th>
+                      <th className="py-3 px-5 text-center">Status</th>
+                      <th className="py-3 px-5 text-right">AI Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {selectedAi.onboardedAgents.map((ag) => {
+                      const isAgentActive = ag.agentStatus === 'Active';
+                      return (
+                        <tr
+                          key={ag.id || ag.agentId}
+                          id={`detail-agent-row-${ag.agentId}`}
+                          className="hover:bg-slate-50/70 transition-colors"
+                        >
+                          <td className="py-3.5 px-5 font-mono font-bold text-slate-800">
+                            {ag.agentId}
+                          </td>
+                          <td className="py-3.5 px-5 font-semibold text-slate-800">
+                            {ag.agentName}
+                          </td>
+                          <td className="py-3.5 px-5 text-center">
+                            {isAgentActive ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                Active
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                Inactive
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-5 text-right">
+                            {isAgentActive ? (
+                              <button
+                                type="button"
+                                id={`details-deactivate-agent-${ag.agentId}`}
+                                onClick={() =>
+                                  setAgentModalAction({
+                                    action: 'deactivate',
+                                    agentObj: ag,
+                                  })
+                                }
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-all cursor-pointer shadow-2xs"
+                              >
+                                <Power className="w-3.5 h-3.5" />
+                                Deactivate Agent
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                id={`details-activate-agent-${ag.agentId}`}
+                                onClick={() =>
+                                  setAgentModalAction({
+                                    action: 'activate',
+                                    agentObj: ag,
+                                  })
+                                }
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-all cursor-pointer shadow-2xs"
+                              >
+                                <RefreshCw className="w-3.5 h-3.5" />
+                                Activate Agent
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-8 bg-slate-50/80 rounded-xl border border-dashed border-slate-200 text-center space-y-2">
+                <Users className="w-8 h-8 text-slate-300 mx-auto" />
+                <p className="text-xs font-semibold text-slate-700">No agents onboarded yet</p>
+                <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                  There are currently no agents mapped under this AI institution. You can onboard individual agents anytime.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => onNavigate('Create AI')}
+                  className="mt-2 inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-[#FF6B11] hover:bg-orange-50 rounded-lg border border-[#FF6B11]/30 transition-colors cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Onboard Agent Now
+                </button>
+              </div>
             )}
           </div>
         </div>

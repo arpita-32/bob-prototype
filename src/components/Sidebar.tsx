@@ -72,7 +72,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentNav, onNavigate, curren
     currentNav === 'Agent' ||
     currentNav === 'Create Agent / AI' ||
     currentNav === 'Agent / AI List' ||
-    currentNav === 'Agent / AI Details';
+    currentNav === 'Agent / AI Details' ||
+    currentNav === 'Create AI' ||
+    currentNav === 'AI List' ||
+    currentNav === 'AI Details';
 
   const isReportCenterActive =
     currentNav === 'Report Center' ||
@@ -397,7 +400,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentNav, onNavigate, curren
                     isAgentActive ? 'text-[#FF6B11]' : 'text-slate-500'
                   }`}
                 />
-                <span className="truncate">Agent</span>
+                <span className="truncate">Agent Institution</span>
                 <span className="bg-[#FF6B11] text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">
                   NEW
                 </span>
@@ -414,40 +417,40 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentNav, onNavigate, curren
                 <button
                   type="button"
                   id="nav-create-agent"
-                  onClick={() => onNavigate('Create Agent / AI')}
+                  onClick={() => onNavigate('Create AI')}
                   className={`w-full flex items-center justify-between px-3 py-2 text-[12.5px] rounded-lg whitespace-nowrap transition-colors relative ${
-                    currentNav === 'Create Agent / AI'
+                    currentNav === 'Create AI' || currentNav === 'Create Agent / AI'
                       ? 'text-[#FF6B11] font-semibold bg-[#FFF5EE] border border-[#FF6B11]/30'
                       : 'text-slate-600 hover:text-[#FF6B11] hover:bg-slate-50'
                   }`}
                 >
-                  <span className="truncate">Create Agent / AI</span>
+                  <span className="truncate">Create AI</span>
                 </button>
 
                 <button
                   type="button"
                   id="nav-agent-list"
-                  onClick={() => onNavigate('Agent / AI List')}
+                  onClick={() => onNavigate('AI List')}
                   className={`w-full flex items-center justify-between px-3 py-2 text-[12.5px] rounded-lg whitespace-nowrap transition-colors relative ${
-                    currentNav === 'Agent / AI List'
+                    currentNav === 'AI List' || currentNav === 'Agent / AI List' || currentNav === 'Agent'
                       ? 'text-[#FF6B11] font-semibold bg-[#FFF5EE] border border-[#FF6B11]/30'
                       : 'text-slate-600 hover:text-[#FF6B11] hover:bg-slate-50'
                   }`}
                 >
-                  <span className="truncate">Agent / AI List</span>
+                  <span className="truncate">AI List</span>
                 </button>
 
                 <button
                   type="button"
                   id="nav-agent-details"
-                  onClick={() => onNavigate('Agent / AI Details')}
+                  onClick={() => onNavigate('AI Details')}
                   className={`w-full flex items-center justify-between px-3 py-2 text-[12.5px] rounded-lg whitespace-nowrap transition-colors relative ${
-                    currentNav === 'Agent / AI Details'
+                    currentNav === 'AI Details' || currentNav === 'Agent / AI Details'
                       ? 'text-[#FF6B11] font-semibold bg-[#FFF5EE] border border-[#FF6B11]/30'
                       : 'text-slate-600 hover:text-[#FF6B11] hover:bg-slate-50'
                   }`}
                 >
-                  <span className="truncate">Agent / AI Details</span>
+                  <span className="truncate">AI Details</span>
                 </button>
               </div>
             )}

@@ -54,7 +54,7 @@ export default function App() {
 
   // Agent State
   const [agentsList, setAgentsList] = useState<AgentEntity[]>(mockAgentEntities);
-  const [selectedAgent, setSelectedAgent] = useState<AgentEntity>(mockAgentEntities[0]);
+  const [selectedAgent, setSelectedAgent] = useState<AgentEntity | null>(null);
 
   // Biller State
   const [billersList, setBillersList] = useState<BillerEntity[]>(mockBillersList);
@@ -76,6 +76,8 @@ export default function App() {
     }
     if (agentParam) {
       setSelectedAgent(agentParam);
+    } else if (nav === 'AI Details' || nav === 'Agent / AI Details') {
+      setSelectedAgent(null);
     }
     setCurrentNav(nav);
   };
@@ -83,6 +85,13 @@ export default function App() {
   const handleAgentCreated = (newAgent: AgentEntity) => {
     setAgentsList((prev) => [newAgent, ...prev]);
     setSelectedAgent(newAgent);
+  };
+
+  const handleUpdateAgent = (updatedAgent: AgentEntity) => {
+    setAgentsList((prev) =>
+      prev.map((a) => (a.id === updatedAgent.id ? updatedAgent : a))
+    );
+    setSelectedAgent(updatedAgent);
   };
 
   const handleBillerCreated = (newBiller: BillerEntity) => {
@@ -298,24 +307,26 @@ export default function App() {
           )}
 
           {/* AI Agent Module Views */}
-          {(currentNav === 'Agent' || currentNav === 'Agent / AI List') && (
+          {(currentNav === 'Agent' || currentNav === 'Agent / AI List' || currentNav === 'AI List') && (
             <AgentListView
               agentsList={agentsList}
               onNavigate={handleNavigate}
             />
           )}
 
-          {currentNav === 'Create Agent / AI' && (
+          {(currentNav === 'Create Agent / AI' || currentNav === 'Create AI') && (
             <CreateAgentView
               onNavigate={handleNavigate}
               onAgentCreated={handleAgentCreated}
             />
           )}
 
-          {currentNav === 'Agent / AI Details' && (
+          {(currentNav === 'Agent / AI Details' || currentNav === 'AI Details') && (
             <AgentDetailsView
               agent={selectedAgent}
+              agentsList={agentsList}
               onNavigate={handleNavigate}
+              onUpdateAgent={handleUpdateAgent}
             />
           )}
 

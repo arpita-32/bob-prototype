@@ -83,6 +83,9 @@ export type NavItem =
   | 'Create Agent / AI'
   | 'Agent / AI List'
   | 'Agent / AI Details'
+  | 'Create AI'
+  | 'AI List'
+  | 'AI Details'
   | 'Report Center'
   | 'BOU Report'
   | 'COU Report'
@@ -136,6 +139,18 @@ export interface CombinationSearchRecord {
   couConvenienceFee: string;
 }
 
+export interface OnboardedAgent {
+  id: string;
+  agentId: string;
+  agentName: string;
+  agentStatus: 'Active' | 'Inactive';
+  walletStatus: 'Active' | 'No Wallet Limit' | 'Deactivated';
+  walletLimitConfigured?: boolean;
+  walletType?: 'Fixed Wallet' | 'Variable Wallet' | string;
+  dailyLimit?: string;
+  transactionLimit?: string;
+}
+
 export interface AgentEntity {
   id: string;
   name: string;
@@ -143,11 +158,17 @@ export interface AgentEntity {
   type: 'AI' | 'Agent';
   parentEntity?: string;
   npciId: string;
+  aiId?: string;
+  entityNpciId?: string;
   walletBalance: string;
   walletBalanceNum: number;
   dailyLimit: string;
   dailyLimitNum: number;
-  status: 'Live' | 'Submitted' | 'Invited' | 'Suspended';
+  transactionLimit?: string;
+  status: 'Live' | 'Submitted' | 'Invited' | 'Suspended' | 'Active' | 'Inactive';
+  walletCeilingEnabled?: boolean;
+  walletStatus?: 'Active' | 'No Wallet Limit' | 'Deactivated';
+  onboardedAgents?: OnboardedAgent[];
   entityType?: string;
   gstin?: string;
   pinCode?: string;
@@ -156,7 +177,7 @@ export interface AgentEntity {
   adminLastName?: string;
   adminPhone?: string;
   adminEmail?: string;
-  walletType?: 'AI Pooled Wallet' | 'AI Dedicated Wallet';
+  walletType?: 'AI Pooled Wallet' | 'AI Dedicated Wallet' | 'Fixed Wallet' | 'Variable Wallet' | string;
   perTxnCap?: string;
   lowBalanceAlert?: string;
   inviteValidity?: string;

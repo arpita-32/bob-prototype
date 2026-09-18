@@ -1,21 +1,21 @@
+import React, { useState, useMemo } from 'react';
 import {
-  AlertCircle,
-  Building2,
   CheckCircle2,
+  AlertCircle,
   ChevronDown,
-  Download,
-  FileCheck2,
-  FileSpreadsheet,
-  Info,
-  RefreshCw,
+  Building2,
+  UserCheck,
   ShieldCheck,
   Store,
   UploadCloud,
-  UserCheck,
+  FileSpreadsheet,
+  Download,
+  FileCheck2,
+  RefreshCw,
+  Info,
 } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
-import { mockAgentEntities } from '../../data/mockData';
 import { AgentEntity, NavItem, OnboardedAgent } from '../../types';
+import { mockAgentEntities } from '../../data/mockData';
 
 interface CreateAgentViewProps {
   onNavigate: (nav: NavItem, agent?: AgentEntity) => void;
@@ -31,8 +31,8 @@ export const CreateAgentView: React.FC<CreateAgentViewProps> = ({
   onUpdateAgent,
 }) => {
   // Navigation / Mode Selection matching User's Radio Buttons
+  const [entityTarget, setEntityTarget] = useState<'institution' | 'agent'>('institution');
   const [creationMode, setCreationMode] = useState<'individual' | 'bulk'>('individual');
-  const [entityTarget, setEntityTarget] = useState<'institution' | 'agent'>('agent');
 
   // Filter available parent AI entities (Live/Active)
   const availableAIs = useMemo(() => {
@@ -379,81 +379,13 @@ export const CreateAgentView: React.FC<CreateAgentViewProps> = ({
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Create Agent / AI</h1>
 
         {/* Radio Button Options:
-            Row 1: Individual Creation | Bulk Upload
-            Row 2: Agent Institution   | Agent
+            Firstly: Agent Institution | Agent
+            Secondly:
+              - When Agent Institution is selected: Individual Creation is shown selected
+              - When Agent is selected: displays two options: Individual Creation and Bulk Upload
         */}
         <div className="space-y-3 pt-1 pb-2">
-          {/* Row 1: Creation Mode */}
-          <div className="flex items-center gap-10 text-sm font-medium text-slate-800">
-            <label
-              htmlFor="radio-individual-creation"
-              className="inline-flex items-center gap-2.5 cursor-pointer select-none group"
-            >
-              <input
-                id="radio-individual-creation"
-                type="radio"
-                name="creationMode"
-                value="individual"
-                checked={creationMode === 'individual'}
-                onChange={() => {
-                  setCreationMode('individual');
-                  setBulkSuccessSummary(null);
-                }}
-                className="w-4 h-4 text-[#FF6B11] border-slate-300 focus:ring-[#FF6B11] accent-[#FF6B11] cursor-pointer"
-              />
-              <span className="group-hover:text-slate-900 transition-colors">
-                Individual Creation
-              </span>
-            </label>
-
-            <label
-              htmlFor="radio-bulk-upload"
-              onClick={(e) => {
-                if (entityTarget === 'institution') {
-                  e.preventDefault();
-                  showToast('Bulk upload is only available for Agent onboarding.');
-                }
-              }}
-              className={`inline-flex items-center gap-2.5 select-none transition-all ${
-                entityTarget === 'institution'
-                  ? 'opacity-40 cursor-not-allowed'
-                  : 'cursor-pointer group'
-              }`}
-              title={
-                entityTarget === 'institution'
-                  ? 'Bulk upload is only available for Agent onboarding'
-                  : 'Bulk upload multiple agents via CSV/Excel'
-              }
-            >
-              <input
-                id="radio-bulk-upload"
-                type="radio"
-                name="creationMode"
-                value="bulk"
-                disabled={entityTarget === 'institution'}
-                checked={creationMode === 'bulk'}
-                onChange={() => {
-                  if (entityTarget === 'institution') return;
-                  setCreationMode('bulk');
-                  setEntityTarget('agent');
-                  setBulkSuccessSummary(null);
-                }}
-                className="w-4 h-4 text-[#FF6B11] border-slate-300 focus:ring-[#FF6B11] accent-[#FF6B11] disabled:cursor-not-allowed cursor-pointer"
-              />
-              <span className="flex items-center gap-1.5">
-                <span className={entityTarget !== 'institution' ? 'group-hover:text-slate-900' : ''}>
-                  Bulk Upload
-                </span>
-                {entityTarget === 'institution' && (
-                  <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
-                    Agent Only
-                  </span>
-                )}
-              </span>
-            </label>
-          </div>
-
-          {/* Row 2: Entity Target */}
+          {/* Row 1: Firstly displays Agent Institution and Agent */}
           <div className="flex items-center gap-10 text-sm font-medium text-slate-800">
             <label
               htmlFor="radio-agent-institution"
@@ -467,13 +399,12 @@ export const CreateAgentView: React.FC<CreateAgentViewProps> = ({
                 checked={entityTarget === 'institution'}
                 onChange={() => {
                   setEntityTarget('institution');
-                  // Bulk upload is strictly for Agent, so clicking Agent Institution switches mode to Individual
                   setCreationMode('individual');
                   setBulkSuccessSummary(null);
                 }}
                 className="w-4 h-4 text-[#FF6B11] border-slate-300 focus:ring-[#FF6B11] accent-[#FF6B11] cursor-pointer"
               />
-              <span className="group-hover:text-slate-900 transition-colors">
+              <span className={`group-hover:text-slate-900 transition-colors ${entityTarget === 'institution' ? 'text-slate-900 font-semibold' : 'text-slate-700'}`}>
                 Agent Institution
               </span>
             </label>
@@ -494,16 +425,90 @@ export const CreateAgentView: React.FC<CreateAgentViewProps> = ({
                 }}
                 className="w-4 h-4 text-[#FF6B11] border-slate-300 focus:ring-[#FF6B11] accent-[#FF6B11] cursor-pointer"
               />
-              <span className="group-hover:text-slate-900 transition-colors">Agent</span>
+              <span className={`group-hover:text-slate-900 transition-colors ${entityTarget === 'agent' ? 'text-slate-900 font-semibold' : 'text-slate-700'}`}>
+                Agent
+              </span>
             </label>
           </div>
+
+          {/* Row 2: Mode Selection:
+              - When selecting Agent Institution: Individual Creation is shown selected
+              - When selecting Agent: displays two options: Individual Creation & Bulk Upload
+          */}
+          {entityTarget === 'institution' ? (
+            <div className="flex items-center gap-10 text-sm font-medium text-slate-800 animate-in fade-in duration-150">
+              <label
+                htmlFor="radio-individual-creation"
+                className="inline-flex items-center gap-2.5 cursor-pointer select-none group"
+              >
+                <input
+                  id="radio-individual-creation"
+                  type="radio"
+                  name="creationMode"
+                  value="individual"
+                  checked={true}
+                  onChange={() => {
+                    setCreationMode('individual');
+                  }}
+                  className="w-4 h-4 text-[#FF6B11] border-slate-300 focus:ring-[#FF6B11] accent-[#FF6B11] cursor-pointer"
+                />
+                <span className="text-slate-900 font-semibold">
+                  Individual Creation
+                </span>
+              </label>
+            </div>
+          ) : (
+            <div className="flex items-center gap-10 text-sm font-medium text-slate-800 animate-in fade-in duration-150">
+              <label
+                htmlFor="radio-agent-individual"
+                className="inline-flex items-center gap-2.5 cursor-pointer select-none group"
+              >
+                <input
+                  id="radio-agent-individual"
+                  type="radio"
+                  name="agentCreationMode"
+                  value="individual"
+                  checked={creationMode === 'individual'}
+                  onChange={() => {
+                    setCreationMode('individual');
+                    setBulkSuccessSummary(null);
+                  }}
+                  className="w-4 h-4 text-[#FF6B11] border-slate-300 focus:ring-[#FF6B11] accent-[#FF6B11] cursor-pointer"
+                />
+                <span className={`group-hover:text-slate-900 transition-colors ${creationMode === 'individual' ? 'text-slate-900 font-semibold' : 'text-slate-700'}`}>
+                  Individual Creation
+                </span>
+              </label>
+
+              <label
+                htmlFor="radio-agent-bulk"
+                className="inline-flex items-center gap-2.5 cursor-pointer select-none group"
+              >
+                <input
+                  id="radio-agent-bulk"
+                  type="radio"
+                  name="agentCreationMode"
+                  value="bulk"
+                  checked={creationMode === 'bulk'}
+                  onChange={() => {
+                    setCreationMode('bulk');
+                    setBulkSuccessSummary(null);
+                  }}
+                  className="w-4 h-4 text-[#FF6B11] border-slate-300 focus:ring-[#FF6B11] accent-[#FF6B11] cursor-pointer"
+                />
+                <span className={`group-hover:text-slate-900 transition-colors ${creationMode === 'bulk' ? 'text-slate-900 font-semibold' : 'text-slate-700'}`}>
+                  Bulk Upload
+                </span>
+              </label>
+            </div>
+          )}
         </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* CASE 1: BULK UPLOAD MODE */}
+      {/* CASE 1: BULK UPLOAD MODE (AGENT ONLY) */}
       {/* ========================================================================= */}
-      {creationMode === 'bulk' && (
+      {entityTarget === 'agent' && creationMode === 'bulk' && (
         <div className="bg-white border border-slate-200/90 rounded-2xl p-7 shadow-xs space-y-6 animate-in fade-in duration-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
             <div className="flex items-center gap-3">
